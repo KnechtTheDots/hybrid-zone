@@ -1,0 +1,15 @@
+cluster:
+  mkdir -p slurm/logs/{rule} &&
+  sbatch
+    --partition={resources.partition}
+    --cpus-per-task={threads}
+    --mem-per-cpu={resources.mem_mb_per_cpu}
+    --job-name={rule}-{wildcards}-smk
+    --output=slurm/logs/{rule}/{rule}-{wildcards}-%j.out
+default-resources:
+  - partition="Standard"
+  - mem_per_cpu=6000
+  - tmpdir=temp
+latency-wait: 60
+jobs: 30
+use-conda: True
