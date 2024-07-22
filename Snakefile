@@ -70,7 +70,8 @@ rule get_diffs:
 
 rule vcf_subset:
     input:
-        "data/{popn}.vcf.gz"
+        vcf_in="data/{popn}.vcf.gz",
+        sites="data/freqs/diffs.list"
     output:
         "data/{popn}_diff.vcf.gz"
     log:
@@ -80,7 +81,8 @@ rule vcf_subset:
         partition="Standard"
     shell:
         """
-        (bcftools view -R) 2> {log}
+        (bcftools view -Oz -R {input.sites} {input.vcf_in} \
+        -o {output}) 2> {log}
         """
 
 
