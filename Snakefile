@@ -3,7 +3,8 @@
 
 rule target:
     input:
-        expand("data/freqs/{popn}.frq", popn=["red", "yellow", "skt"])
+        "cor_stats/correlations.csv",
+        "cor_stats/p_vals.csv"
 
 # extract the red and yellow samples into separate vcfs to get allele frequencies
 
@@ -73,7 +74,7 @@ rule vcf_subset:
         vcf_in="data/{popn}.vcf.gz",
         sites="data/freqs/diffs.list"
     output:
-        "data/{popn}_diff.vcf.gz"
+        "div_sites/{popn}_diff.vcf.gz"
     log:
         "logs/vcf_subset/{popn}.log"
     resources:
@@ -81,7 +82,8 @@ rule vcf_subset:
         partition="Standard"
     shell:
         """
-        (bcftools view -Oz -R {input.sites} {input.vcf_in} \
+        (bcftools index -t {input.vcf_in}
+        bcftools view -Oz -R {input.sites} {input.vcf_in} \
         -o {output}) 2> {log}
         """
 
@@ -90,19 +92,55 @@ rule vcf_subset:
 
 rule snp_mat:
     input:
-        "data/aurantiacus.vcf.gz"
+        "div_sites/{popn}_diff.vcf.gz"
     output:
-        "data/snp_matrix/{lg}.012"
+        "data/snp_matrix/{popn}.012"
     log:
-        "logs/snp_mat/{lg}.log"
+        "logs/snp_mat/{popn}.log"
     params:
-        chrom="{lg}",
-        out="data/snp_matrix/{lg}"
+        out="data/snp_matrix/{popn}"
     resources:
         mem_mb_per_cpu=6000,
         partition="Standard"
     shell:
         """
-        (vcftools --gzvcf {input} --012 --chr {params.chrom} \
-        --out {params.out}) 2> {log}
+        (vcftools --gzvcf {input} --012 --out {params.out}) 2> {log}
+        """
+# create a matrix that is scored not in comparison to the reference, but in comparison to 
+# the ancestry of the genotype
+
+rule ancestry_matrix:
+    input:
+        "data/snp_matrix/red.012",
+        "data/snp_matrix/skt.012",
+        script="scripts/make_ancestry_matrix.R"
+    output:
+        "data/ancestry_matrix.csv"
+    log:
+        "logs/ancestry_matrix/log"
+    resources:
+        mem_mb_per_cpu=6000,
+        partition="Standard"
+    shell:
+        """
+        (Rscript {input.script}) 2> {log}
+        """
+
+# correlation test of all pairwise sites
+
+rule cor_test:
+    input:
+        data="data/ancestry_matrix.csv",
+        script="scripts/cor_test.R"
+    output:
+        "cor_stats/correlations.csv",
+        "cor_stats/p_vals.csv"
+    log:
+        "logs/cor_test/log"
+    resources:
+        mem_mb_per_cpu=6000,
+        partition="Standard"
+    shell:
+        """
+        (Rscript {input.script}) 2> {log}
         """
