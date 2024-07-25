@@ -106,6 +106,7 @@ rule snp_mat:
         """
         (vcftools --gzvcf {input} --012 --out {params.out}) 2> {log}
         """
+
 # create a matrix that is scored not in comparison to the reference, but in comparison to 
 # the ancestry of the genotype
 
@@ -126,7 +127,9 @@ rule ancestry_matrix:
         (Rscript {input.script}) 2> {log}
         """
 
-# correlation test of all pairwise sites
+# correlation test of all pairwise sites between each set of chromosomes, this is
+# stupid inefficient right now since each pair is being compared twice, but it runs pretty fast, I can 
+# figure out a better way later
 
 rule cor_test:
     input:
@@ -146,6 +149,9 @@ rule cor_test:
         partition="Standard"
     script:
         "scripts/cor_test.R"
+
+# takes in each correlation matrix (and more importantly the associated p-values (-log10(pval)))
+# and plots them
 
 rule plot_cors:
     input:
