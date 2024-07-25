@@ -3,8 +3,8 @@
 
 rule target:
     input:
-        "cor_stats/correlations.csv",
-        "cor_stats/p_vals.csv"
+        expand("cor_stats/correlations_{lg1}_{lg2}.csv", lg1=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"],
+                lg2=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"])
 
 # extract the red and yellow samples into separate vcfs to get allele frequencies
 
@@ -21,7 +21,8 @@ rule red_yellow:
     shell:
         """
         (bcftools view -Oz -S data/samps/{wildcards.popn}.samps {input} \
-        -o {output}) 2> {log}
+        -o {output}
+        bcftools index -t {output}) 2> {log}
         """
 
 # get frequencies of each site in the red and yellow groups
@@ -82,8 +83,7 @@ rule vcf_subset:
         partition="Standard"
     shell:
         """
-        (bcftools index -t {input.vcf_in}
-        bcftools view -Oz -R {input.sites} {input.vcf_in} \
+        (bcftools view -Oz -R {input.sites} {input.vcf_in} \
         -o {output}) 2> {log}
         """
 
@@ -131,16 +131,18 @@ rule ancestry_matrix:
 rule cor_test:
     input:
         data="data/ancestry_matrix.csv",
+        diffs="data/freqs/diffs.list",
         script="scripts/cor_test.R"
     output:
-        "cor_stats/correlations.csv",
-        "cor_stats/p_vals.csv"
+        cors="cor_stats/correlations_{lg1}_{lg2}.csv",
+        pvals="cor_stats/p_vals_{lg1}_{lg2}.csv"
     log:
-        "logs/cor_test/log"
+        "logs/cor_test/{lg1}_{lg2}.log"
+    params:
+        lg1="{lg1}",
+        lg2="{lg2}"
     resources:
         mem_mb_per_cpu=6000,
         partition="Standard"
-    shell:
-        """
-        (Rscript {input.script}) 2> {log}
-        """
+    script:
+        "scripts/cor_test.R"
