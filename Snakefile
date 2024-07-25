@@ -3,7 +3,7 @@
 
 rule target:
     input:
-        expand("cor_stats/correlations_{lg1}_{lg2}.csv", lg1=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"],
+        expand("figures/{lg1}_{lg2}_pval.jpeg", lg1=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"],
                 lg2=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"])
 
 # extract the red and yellow samples into separate vcfs to get allele frequencies
@@ -146,3 +146,19 @@ rule cor_test:
         partition="Standard"
     script:
         "scripts/cor_test.R"
+
+rule plot_cors:
+    input:
+        cors="cor_stats/correlations_{lg1}_{lg2}.csv",
+        pvals="cor_stats/p_vals_{lg1}_{lg2}.csv",
+        diffs="data/freqs/diffs.list"
+    output:
+        "figures/{lg1}_{lg2}_pval.jpeg"
+    params:
+        lg1="{lg1}",
+        lg2="{lg2}"
+    resources:
+        mem_mb_per_cpu=6000,
+        partition="Standard"
+    script:
+        "scripts/cor_plots.R"
