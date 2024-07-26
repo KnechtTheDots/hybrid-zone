@@ -1,11 +1,12 @@
 
-
+# target changes depending on what the desired output is
 
 rule target:
     input:
-        "figures/all_sig.jpeg",
-        expand("figures/{lg1}_{lg2}_pval.jpeg", lg1=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"],
-                lg2=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"])
+        expand("data/{popn}.vcf.gz", popn=["red","yellow","skt"])
+
+
+# create a set of lists for reach population
 
 rule get_samps:
     input:
@@ -107,7 +108,7 @@ rule vcf_subset:
         """
 
 
-# convert the vcf file to a matrix of 0, 1, 2 (homozygous ref, het, homozygous alternate)
+# convert the vcf file to a matrix of 0, 1, 2 (homozygous reference, het, homozygous alternate)
 
 rule snp_mat:
     input:
@@ -127,7 +128,7 @@ rule snp_mat:
         """
 
 # create a matrix that is scored not in comparison to the reference, but in comparison to 
-# the ancestry of the genotype
+# the ancestry of the genotype (red = 0, het = .5, yellow = 1)
 
 rule ancestry_matrix:
     input:
@@ -187,6 +188,9 @@ rule plot_cors:
         partition="Standard"
     script:
         "scripts/cor_plots.R"
+
+# filters sites by correlation p-value and makes a plot with the entire genome on each axis and points
+# at the sites with large -log10(p_value)
 
 rule plot_all_sites:
     input:
