@@ -3,8 +3,27 @@
 
 rule target:
     input:
+        "figures/all_sig.jpeg",
         expand("figures/{lg1}_{lg2}_pval.jpeg", lg1=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"],
                 lg2=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"])
+
+rule get_samps:
+    input:
+        "data/aurantiacus.vcf.gz"
+    output:
+        expand("data/samps/{popn}.samps",popn=["red","yellow","skt"])
+    log:
+        "logs/get_samps/get.log"
+    resources:
+        mem_mb_per_cpu=6000,
+        partition="Standard"
+    shell:
+        """
+        (bcftools query -l {input} | awk '/PUN-R|CRS|UCSD_22/' > data/samps/red.samps 
+        bcftools query -l {input} | awk '/INJ_22|PCT_2016|PUN-Y/' > data/samps/yellow.samps 
+        bcftools query -l {input} | awk '/SKT/' > data/samps/skt.samps) 2> {log}
+        """
+
 
 # extract the red and yellow samples into separate vcfs to get allele frequencies
 
@@ -168,3 +187,20 @@ rule plot_cors:
         partition="Standard"
     script:
         "scripts/cor_plots.R"
+
+rule plot_all_sites:
+    input:
+        expand("cor_stats/p_vals_{lg1}_{lg2}.csv", lg1=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"],
+                lg2=["LG1","LG2","LG3","LG4","LG5","LG6","LG7","LG8","LG9","LG10"])
+    output:
+        "figures/all_sig.jpeg"
+    log:
+        "logs/all_sites/fig.log"
+    resources:
+        mem_mb_per_cpu=6000,
+        partition="Standard"
+    shell:
+        """
+        (Rscript scripts/all_sig_sites_plot.R) 2> {log}
+        """
+        

@@ -47,7 +47,7 @@ if(snakemake@params[['lg1']]==snakemake@params[['lg2']]){
     # pivot so that each row is a site and site_1 is the location on lg1, site_2 is the location on lg2
     pivot_longer(1:length(lg2), names_to = "site_2", 
                  values_to = "pvals") %>% 
-    # make sure everything is numeric, it was reading them wierd
+    # make sure everything is numeric, it was reading them weird
     mutate(site_1 = as.numeric(site_1),
            site_2 = as.numeric(site_2),
            pvals = as.numeric(pvals)) %>% 
