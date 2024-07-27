@@ -3,10 +3,10 @@
 
 rule target:
     input:
-        expand("data/{popn}.vcf.gz", popn=["red","yellow","skt"])
+        "figures/all_sig.jpeg"
 
 
-# create a set of lists for reach population
+# create a set of lists for reach population/ also index the vcf as a first step
 
 rule get_samps:
     input:
@@ -20,7 +20,8 @@ rule get_samps:
         partition="Standard"
     shell:
         """
-        (bcftools query -l {input} | awk '/PUN-R|CRS|UCSD_22/' > data/samps/red.samps 
+        (bcftools index -t {input}
+        bcftools query -l {input} | awk '/PUN-R|CRS|UCSD_22/' | awk '!/JMC/' > data/samps/red.samps 
         bcftools query -l {input} | awk '/INJ_22|PCT_2016|PUN-Y/' > data/samps/yellow.samps 
         bcftools query -l {input} | awk '/SKT/' > data/samps/skt.samps) 2> {log}
         """
@@ -30,7 +31,8 @@ rule get_samps:
 
 rule red_yellow:
     input:
-        "data/aurantiacus.vcf.gz"
+        vcf="data/aurantiacus.vcf.gz",
+        samps="data/samps/{popn}.samps"
     output:
         "data/{popn}.vcf.gz"
     log:
@@ -40,7 +42,7 @@ rule red_yellow:
         partition="Standard"
     shell:
         """
-        (bcftools view -Oz -S data/samps/{wildcards.popn}.samps {input} \
+        (bcftools view -Oz -S {input.samps} {input.vcf} \
         -o {output}
         bcftools index -t {output}) 2> {log}
         """
