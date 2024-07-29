@@ -11,15 +11,17 @@ sites_genome <- c(0, 20551961, 24346716, 20798979, 18557064,
 
 sites_tot <- cumsum(sites_genome)
 
-d <- data.frame()
+d <- b <- data.frame()
 num <- 1:10
-lg1 <- lg2 <- c()
+lg1 <- lg2 <- raw_lg1 <- raw_lg2 <- c()
 for(i in lgs){
-  lg1 <- as.numeric(diffs$site[diffs$chr==i]) + sites_tot[num[lgs==i]]
+  raw_lg1 <- as.numeric(diffs$site[diffs$chr==i])
+  lg1 <- raw_lg1 + sites_tot[num[lgs==i]]
   pvals <- data.frame()
   for(j in lgs){
     if(i==j) next
-    lg2 <- as.numeric(diffs$site[diffs$chr==j]) + sites_tot[num[lgs==j]]
+    raw_lg2 <- as.numeric(diffs$site[diffs$chr==j])
+    lg2 <- raw_lg2 + sites_tot[num[lgs==j]]
     pvals <- read.csv(paste0("cor_stats/p_vals_",i,"_",j,".csv"))
     colnames(pvals) <- lg2
     pvals <- pvals %>% 
@@ -32,6 +34,22 @@ for(i in lgs){
              pval = as.numeric(pval)) %>% 
       filter(pval > 20) 
     d <- rbind(d, pvals)
+
+    pvals <- read.csv(paste0("cor_stats/p_vals_",i,"_",j,".csv"))
+    colnames(pvals) <- raw_lg2
+    pvals_raw <- pvals %>% 
+      mutate(site_1 = raw_lg1) %>% 
+      pivot_longer(1:length(raw_lg2),
+                   names_to = "site_2",
+                   values_to = "pval") %>% 
+      mutate(site_1 = as.numeric(site_1),
+             site_2 = as.numeric(site_2),
+             pval = as.numeric(pval),
+             lg1 = i,
+             lg2 = j) %>% 
+      filter(pval > 20)
+    b <- rbind(b, pvals_raw)
+    
   }
 }
 
@@ -47,3 +65,5 @@ p <- d %>%
 
 ggsave("figures/all_sig.jpeg", plot = p, device = "jpeg",
        width = 12, height = 8)
+
+write.csv(b, "data/sig_sites.csv", row.names = F)

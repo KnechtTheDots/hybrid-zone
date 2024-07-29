@@ -21,7 +21,7 @@ rule get_samps:
     shell:
         """
         (bcftools index -t {input}
-        bcftools query -l {input} | awk '/PUN-R|CRS|UCSD_22/' | awk '!/JMC/' > data/samps/red.samps 
+        bcftools query -l {input} | awk '/PUN-R|CRS|UCSD_22/ && !/JMC/' > data/samps/red.samps 
         bcftools query -l {input} | awk '/INJ_22|PCT_2016|PUN-Y/' > data/samps/yellow.samps 
         bcftools query -l {input} | awk '/SKT/' > data/samps/skt.samps) 2> {log}
         """
